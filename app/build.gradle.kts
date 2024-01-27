@@ -55,4 +55,6 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2") //untuk lifecycleScope
 
+    implementation("androidx.exifinterface:exifinterface:1.3.6")
+
 }
