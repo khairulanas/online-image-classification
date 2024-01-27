@@ -13,11 +13,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import com.dicoding.picodiploma.mycamera.CameraActivity.Companion.CAMERAX_RESULT
+import com.dicoding.picodiploma.mycamera.data.api.ApiConfig
+import com.dicoding.picodiploma.mycamera.data.api.FileUploadResponse
 import com.dicoding.picodiploma.mycamera.databinding.ActivityMainBinding
+import com.google.gson.Gson
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.HttpException
 
 class MainActivity : AppCompatActivity() {
 
@@ -118,6 +124,28 @@ class MainActivity : AppCompatActivity() {
                 imageFile.name,
                 requestImageFile
             )
+
+            lifecycleScope.launch {
+                try {
+                    val apiService = ApiConfig.getApiService()
+                    val successResponse = apiService.uploadImage(multipartBody)
+                    with(successResponse.data){
+                        binding.resultTextView.text = if (isAboveThreshold==true){
+                            showToast(successResponse.message.toString())
+                            String.format("%s with %.2f%%",result,confidenceScore)
+                        } else {
+                            showToast("Model is predicted successfully but under threshold.")
+                            String.format("Please use the correct picture because  the confidence score is %.2f%%", confidenceScore)
+                        }
+                    }
+                    showLoading(isLoading = false)
+                }catch (e:HttpException){
+                    val errorBody = e.response()?.errorBody()?.string()
+                    val errorResponse = Gson().fromJson(errorBody, FileUploadResponse::class.java)
+                    showToast(errorResponse.message.toString())
+                    showLoading(isLoading = false)
+                }
+            }
         }?: showToast(getString(R.string.empty_image_warning))
     }
 
